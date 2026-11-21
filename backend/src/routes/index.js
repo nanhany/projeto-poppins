@@ -1,0 +1,21 @@
+import { Router } from 'express';
+import multer from 'multer';
+import { authenticate, allowRoles } from '../middlewares/auth.js';
+import { login } from '../controllers/authController.js';
+import { listCourses, createCourse, updateCourse, deleteCourse, authorizeCourseUser, revokeCourseUser, listStudents, createStudent, updateStudent, deleteStudent, listInstitutions, createInstitution, updateInstitution, deleteInstitution, listUsers, createUser, updateUser, deleteUser } from '../controllers/catalogController.js';
+import { createAndSend, listNotifications, listLogs } from '../controllers/notificationController.js';
+import { importCsv } from '../controllers/integrationController.js';
+
+const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, file.mimetype === 'text/csv' || file.originalname.toLowerCase().endsWith('.csv')) });
+router.post('/auth/login', login);
+router.use(authenticate);
+router.get('/courses', listCourses); router.post('/courses', allowRoles('admin','coordenador'), createCourse); router.put('/courses/:id', allowRoles('admin','coordenador'), updateCourse); router.delete('/courses/:id', allowRoles('admin','coordenador'), deleteCourse);
+router.post('/courses/:id/authorized-users', allowRoles('admin','coordenador'), authorizeCourseUser); router.delete('/courses/:id/authorized-users/:userId', allowRoles('admin','coordenador'), revokeCourseUser);
+router.get('/students', listStudents); router.post('/students', allowRoles('admin','coordenador'), createStudent); router.put('/students/:id', allowRoles('admin','coordenador'), updateStudent); router.delete('/students/:id', allowRoles('admin','coordenador'), deleteStudent);
+router.get('/institutions', allowRoles('admin'), listInstitutions); router.post('/institutions', allowRoles('admin'), createInstitution); router.put('/institutions/:id', allowRoles('admin'), updateInstitution); router.delete('/institutions/:id', allowRoles('admin'), deleteInstitution);
+router.get('/users', allowRoles('admin','coordenador'), listUsers); router.post('/users', allowRoles('admin'), createUser); router.put('/users/:id', allowRoles('admin'), updateUser); router.delete('/users/:id', allowRoles('admin'), deleteUser);
+router.post('/notifications', allowRoles('admin','coordenador','professor'), createAndSend);
+router.get('/notifications', listNotifications); router.get('/logs', listLogs);
+router.post('/integrations/csv', allowRoles('admin','coordenador'), upload.single('file'), importCsv);
+export default router;
