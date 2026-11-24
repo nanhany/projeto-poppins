@@ -1,49 +1,121 @@
 # Poppins
 
-Sistema administrativo de notificações acadêmicas para plataformas EAD. O Poppins não é um chatbot: não interpreta mensagens de alunos nem gera conteúdo. Coordenadores e professores autorizados escrevem avisos acadêmicos e escolhem os alunos matriculados que devem recebê-los.
+Sistema web para organizar e enviar comunicados acadêmicos a estudantes de cursos EAD por WhatsApp ou SMS.
 
-## Escopo implementado nesta base
+> **Escopo atual:** o Poppins é um painel administrativo de notificações manuais. Não é um chatbot conversacional, não consulta uma plataforma EAD automaticamente e não agenda lembretes. O coordenador, professor autorizado ou administrador redige o aviso e escolhe os estudantes matriculados que devem recebê-lo.
 
-- API Node.js/Express com autenticação JWT e autorização por cargo/instituição.
-- PostgreSQL com instituições, usuários, cursos, alunos, matrículas, notificações, entregas e auditoria.
-- Envio WhatsApp pela Meta Cloud API e SMS via Twilio, habilitados somente com credenciais configuradas.
-- CSV de matrículas e alunos com cabeçalho documentado no endpoint de importação.
-- Interface React para login, composição manual, seleção de curso e histórico.
-- Registros de falhas e status de entrega por aluno.
+## Funcionalidades implementadas
+
+- Login com token JWT e controle de acesso por cargo e instituição.
+- Cadastro e gestão de instituições, cursos, usuários e estudantes.
+- Autorização de professores para cursos específicos.
+- Criação manual de avisos de prazo, prova ou assunto acadêmico.
+- Envio individual em lote para estudantes selecionados com matrícula ativa.
+- WhatsApp pela Meta Cloud API e opção de SMS pelo Twilio. Se o WhatsApp falhar, o SMS é usado como contingência quando suas credenciais estiverem configuradas.
+- Histórico de notificações, registros de falhas e atualização de status pelos webhooks dos provedores.
+- Importação de estudantes e matrículas por CSV.
+- Validação de telefone e verificações simples para evitar que CPF, e-mail ou telefone sejam incluídos no texto do aviso.
+
+## Tecnologias e linguagens
+
+| Camada | Tecnologias |
+| --- | --- |
+| Linguagens | JavaScript (ES modules), JSX, HTML e CSS; SQL para o esquema do banco |
+| Backend | Node.js 20+, Express 4, `pg`, JWT e `bcryptjs` |
+| Frontend | React 18, Vite 6 e `lucide-react` |
+| Banco de dados | PostgreSQL 15+ |
+| Mensageria | WhatsApp Cloud API da Meta e SMS pelo Twilio |
+| Segurança HTTP | Helmet, CORS configurável e validação de assinatura dos webhooks |
+| Testes | `node:test` para testes unitários do backend |
+
+O código atual não usa TypeScript, Python, Vue, MongoDB, Firebase Cloud Messaging (FCM) nem uma integração automática com AVA. Essas tecnologias aparecem como alternativas ou propostas no planejamento acadêmico, não como dependências desta implementação.
 
 ## Requisitos
 
-- Node.js 20+
-- PostgreSQL 15+
+- Node.js 20 ou superior e npm.
+- PostgreSQL 15 ou superior, em execução.
+- Credenciais de um provedor de mensagens para fazer envios reais. Sem elas, é possível iniciar o painel e executar os testes, mas não enviar mensagens.
 
-## Desenvolvimento
+## Executar localmente
 
-1. Copie `backend/.env.example` para `backend/.env` e configure `DATABASE_URL`, `JWT_SECRET` e ao menos as variáveis do canal que pretende usar.
-2. Crie um banco PostgreSQL e rode `backend/src/database/schema.sql`.
-3. No diretório `backend`, execute `npm install`, crie o administrador inicial com `npm run create-admin -- "Nome" email senha-forte` e inicie com `npm run dev`.
-4. No diretório `frontend`, execute `npm install` e `npm run dev`.
+### 1. Configurar o backend
 
-A interface usa `VITE_API_URL` (padrão `http://localhost:3000/api`). O primeiro usuário administrador deve ser criado diretamente no banco ou por um processo de provisionamento controlado; não há cadastro público.
+Crie um banco PostgreSQL chamado `poppins` (ou ajuste a URL de conexão) e, no PowerShell:
 
-## CSV de integração
+```powershell
+cd "C:\Users\nanha\OneDrive\Área de Trabalho\Faculdade\Projeto Poppins\backend"
+npm install
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+```
 
-`POST /api/integrations/csv` recebe `multipart/form-data`, campo `file`, e as colunas `nome,email,telefone,status_matricula,curso`. O curso deve existir na instituição do usuário. Matrículas ativas são criadas/atualizadas e os números são normalizados para E.164 quando possível.
+Edite `backend/.env` com os dados do banco e uma chave `JWT_SECRET` aleatória com pelo menos 32 caracteres. Consulte [`.env.example`](backend/.env.example) para a lista completa de opções. O arquivo `.env` contém configurações locais e não deve ser enviado ao Git.
 
-## Segurança e configuração
+Em seguida, aplique o esquema e crie a conta administrativa:
 
-- Nunca commite `.env` ou credenciais de provedores.
-- Configure `GET/POST /webhooks/meta` na Meta e `POST /webhooks/twilio` no Twilio, com os respectivos segredos e `PUBLIC_API_URL`, para atualizar status de entrega.
-- Restrições de dados sensíveis são validações determinísticas de padrões comuns (CPF, e-mail e telefone); isso não substitui revisão humana.
-- O envio é síncrono no disparo da API. Para escala, alta disponibilidade e garantia de entrega em até 10 segundos, será necessário provisionar fila durável, workers, observabilidade, redundância e testes de carga no ambiente de destino.
+```powershell
+npm run db:schema
+npm run create-admin -- "Nome do Administrador" admin@exemplo.com "SuaSenhaComPeloMenos10Caracteres"
+npm run dev
+```
 
-## Rotas principais
+O comando `create-admin` aceita opcionalmente um quarto argumento com o UUID da instituição: `npm run create-admin -- "Nome" email senha-forte id-da-instituicao`.
 
-- `POST /api/auth/login`
-- `GET/POST /api/courses`, `GET/POST /api/students`, `GET/POST /api/institutions` (admin), `GET/POST /api/users` (admin)
-- `POST /api/notifications` para criar e enviar notificação manual
-- `GET /api/notifications` e `GET /api/logs`
-- `POST /api/integrations/csv`
+### 2. Executar o frontend
 
-Todos os endpoints administrativos (exceto login) exigem `Authorization: Bearer <token>`. Professores só veem cursos e podem enviar avisos para cursos associados por um coordenador ou administrador em `POST /api/courses/:id/authorized-users`.
+Abra outro terminal PowerShell:
 
-Os testes unitários determinísticos das regras de conteúdo ficam em `backend/src/utils/message.test.js` e podem ser executados com `npm test`.
+```powershell
+cd "C:\Users\nanha\OneDrive\Área de Trabalho\Faculdade\Projeto Poppins\frontend"
+npm install
+npm run dev
+```
+
+Abra o endereço informado pelo Vite, normalmente `http://localhost:5173`. Por padrão, o frontend chama a API em `http://localhost:3000/api`; altere `VITE_API_URL` se necessário. O endpoint `GET http://localhost:3000/health` verifica se a API está respondendo.
+
+## Testes e build
+
+Testes unitários do backend:
+
+```powershell
+cd "C:\Users\nanha\OneDrive\Área de Trabalho\Faculdade\Projeto Poppins\backend"
+npm test
+```
+
+Build de produção do frontend:
+
+```powershell
+cd "C:\Users\nanha\OneDrive\Área de Trabalho\Faculdade\Projeto Poppins\frontend"
+npm run build
+```
+
+## Configuração de integrações
+
+As variáveis são lidas pelo backend a partir de `backend/.env`.
+
+- **Obrigatórias para a API:** `DATABASE_URL` e `JWT_SECRET` (mínimo de 32 caracteres).
+- **Opcionais com padrões locais:** `PORT` (3000), `JWT_EXPIRES_IN` (8h), `CORS_ORIGIN` (`http://localhost:5173`) e `DEFAULT_PHONE_REGION` (`BR`).
+- **WhatsApp:** `META_ACCESS_TOKEN`, `META_PHONE_NUMBER_ID` e, para receber status/verificar o webhook, `META_APP_SECRET` e `META_WEBHOOK_VERIFY_TOKEN`. `META_API_VERSION` usa `v21.0` por padrão.
+- **SMS/Twilio:** `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` e `TWILIO_FROM_NUMBER`. `PUBLIC_API_URL` deve apontar para uma URL pública HTTPS da API ao configurar callbacks de status.
+
+Configure as URLs dos webhooks no painel de cada provedor e use HTTPS fora do ambiente local. Credenciais de produção não devem ser incluídas em issues, documentação ou código.
+
+## Documentação complementar
+
+- [Escopo, requisitos e status](docs/escopo-e-status.md): compara a proposta acadêmica com o que o código realmente implementa.
+- [Referência da API](docs/api.md): endpoints, autenticação, permissões e formato da importação CSV.
+
+## Demonstração
+
+Assista à demonstração do projeto no YouTube: https://www.youtube.com/watch?v=0n7OwWISGL8
+
+## Limitações conhecidas
+
+- Os envios são disparados manualmente e processados de forma síncrona; não há fila durável, agendador ou política de retentativa controlada. A contingência imediata de WhatsApp para SMS é a única tentativa por canal alternativo.
+- Não existe conector com Moodle ou outra plataforma EAD, nem sincronização automática de calendário, prazos ou matrículas.
+- As regras de detecção de dados pessoais em mensagens são verificações heurísticas de padrões comuns, não uma garantia de conformidade legal ou de privacidade.
+- Os objetivos de entrega em até 10 segundos e disponibilidade de 99% descritos no planejamento ainda não foram medidos nem são garantidos por esta implementação.
+- Os testes existentes cobrem regras de conteúdo; não há, neste momento, uma suíte abrangente de testes de API, integração com provedores ou interface.
+
+Consulte [Escopo, requisitos e status](docs/escopo-e-status.md) para o detalhamento do que está pronto e do que permanece planejado.
+
+<sub>Projeto desenvolvido exclusivamente por Nanhany.</sub>
