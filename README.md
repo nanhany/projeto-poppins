@@ -30,19 +30,38 @@ Sistema web para organizar e enviar comunicados acadêmicos a estudantes de curs
 
 O código atual não usa TypeScript, Python, Vue, MongoDB, Firebase Cloud Messaging (FCM) nem uma integração automática com AVA. Essas tecnologias aparecem como alternativas ou propostas no planejamento acadêmico, não como dependências desta implementação.
 
-## Requisitos
+## Programas necessários e úteis
 
-- Node.js 20 ou superior e npm.
-- PostgreSQL 15 ou superior, em execução.
-- Credenciais de um provedor de mensagens para fazer envios reais. Sem elas, é possível iniciar o painel e executar os testes, mas não enviar mensagens.
+| Programa | Para que serve | Necessário? |
+| --- | --- | --- |
+| Node.js 20 ou superior (inclui npm) | Executa o backend e instala as dependências do projeto | Sim |
+| PostgreSQL 15 ou superior | Servidor de banco de dados usado pela aplicação | Sim |
+| PowerShell ou outro terminal | Executa os comandos de instalação e inicialização | Sim |
+| Navegador atualizado | Acessa o site local, normalmente em `http://localhost:5173` | Sim |
+| Visual Studio Code | Editar o código e abrir terminais integrados | Recomendado; qualquer editor serve |
+| pgAdmin | Criar e administrar o banco PostgreSQL por uma interface gráfica | Opcional; não substitui o servidor PostgreSQL |
+| Git | Baixar o projeto com `git clone` e obter atualizações | Opcional; também é possível baixar o projeto como ZIP |
+
+O serviço do PostgreSQL precisa estar instalado e em execução. O pgAdmin é apenas uma ferramenta para administrar o banco. Para fazer envios reais por WhatsApp ou SMS, configure também as credenciais do provedor correspondente; elas não são necessárias para abrir o painel.
 
 ## Executar localmente
 
-Abra o PowerShell na pasta raiz do projeto (a pasta que contem este `README.md`).
+### 1. Baixar e abrir o projeto
 
-### 1. Configurar o backend
+Se tiver o Git instalado, clone o repositório:
 
-Crie um banco PostgreSQL chamado `poppins` (ou ajuste a URL de conexão) e, no PowerShell:
+```powershell
+git clone https://github.com/nanhany/projeto-poppins.git
+cd projeto-poppins
+```
+
+Ou baixe o projeto como ZIP pelo GitHub e extraia os arquivos. Abra a pasta raiz do projeto no Visual Studio Code e use **Terminal > Novo Terminal**; os comandos abaixo também podem ser executados no PowerShell aberto nessa pasta.
+
+### 2. Preparar o banco e configurar o backend
+
+Inicie o serviço PostgreSQL. Se estiver usando o pgAdmin, conecte-se ao servidor local, clique com o botão direito em **Databases > Create > Database** e crie um banco chamado `poppins`. Anote o usuário e a senha do PostgreSQL para configurar a conexão.
+
+No terminal, a partir da pasta raiz do projeto, instale as dependências do backend e crie o arquivo local de configuração:
 
 ```powershell
 cd backend
@@ -50,9 +69,9 @@ npm install
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
-Edite `backend/.env` com os dados do banco e uma chave `JWT_SECRET` aleatória com pelo menos 32 caracteres. Consulte [`.env.example`](backend/.env.example) para a lista completa de opções. O arquivo `.env` contém configurações locais e não deve ser enviado ao Git.
+Edite `backend/.env`: ajuste `DATABASE_URL` com o usuário e a senha do seu PostgreSQL (por exemplo, `postgres://postgres:SUA_SENHA@localhost:5432/poppins`) e defina `JWT_SECRET` como uma chave aleatória com pelo menos 32 caracteres. Consulte [`.env.example`](backend/.env.example) para as demais opções. O arquivo `.env` contém configurações locais e não deve ser enviado ao Git.
 
-Em seguida, aplique o esquema e crie a conta administrativa:
+Crie as tabelas e a conta administrativa:
 
 ```powershell
 npm run db:schema
@@ -62,9 +81,11 @@ npm run dev
 
 O comando `create-admin` aceita opcionalmente um quarto argumento com o UUID da instituição: `npm run create-admin -- "Nome" email senha-forte id-da-instituicao`.
 
-### 2. Executar o frontend
+O backend ficará disponível em `http://localhost:3000`. Mantenha esse terminal aberto.
 
-Abra outro terminal PowerShell:
+### 3. Executar o frontend
+
+Abra um segundo terminal na pasta raiz do projeto e execute:
 
 ```powershell
 cd frontend
@@ -72,9 +93,11 @@ npm install
 npm run dev
 ```
 
-Abra o endereço informado pelo Vite, normalmente `http://localhost:5173`. Por padrão, o frontend chama a API em `http://localhost:3000/api`; altere `VITE_API_URL` se necessário. O endpoint `GET http://localhost:3000/health` verifica se a API está respondendo.
+Abra o endereço informado pelo Vite, normalmente `http://localhost:5173`, e entre com o e-mail e a senha usados ao criar a conta administrativa. Por padrão, o frontend chama a API em `http://localhost:3000/api`; altere `VITE_API_URL` se necessário. O endpoint `GET http://localhost:3000/health` verifica se a API está respondendo. Mantenha também o terminal do frontend aberto enquanto usar o site.
 
 ## Testes e build
+
+Execute estes comandos em um terminal aberto na pasta raiz do projeto.
 
 Testes unitários do backend:
 
