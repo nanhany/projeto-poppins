@@ -120,4 +120,4 @@ Assista à demonstração do projeto no YouTube: https://www.youtube.com/watch?v
 
 Consulte [Escopo, requisitos e status](docs/escopo-e-status.md) para o detalhamento do que está pronto e do que permanece planejado.
 
-<sub>Projeto desenvolvido exclusivamente por Nanhany.</sub>
+<sub>Projeto desenvolvido por Nanhany. Os créditos pela idealização original pertencem ao criador original do projeto; a idealização não é de autoria de Nanhany.</sub>
