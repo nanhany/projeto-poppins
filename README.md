@@ -38,12 +38,14 @@ O código atual não usa TypeScript, Python, Vue, MongoDB, Firebase Cloud Messag
 
 ## Executar localmente
 
+Abra o PowerShell na pasta raiz do projeto (a pasta que contem este `README.md`).
+
 ### 1. Configurar o backend
 
 Crie um banco PostgreSQL chamado `poppins` (ou ajuste a URL de conexão) e, no PowerShell:
 
 ```powershell
-cd "C:\Users\nanha\OneDrive\Área de Trabalho\Faculdade\Projeto Poppins\backend"
+cd backend
 npm install
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
@@ -65,7 +67,7 @@ O comando `create-admin` aceita opcionalmente um quarto argumento com o UUID da 
 Abra outro terminal PowerShell:
 
 ```powershell
-cd "C:\Users\nanha\OneDrive\Área de Trabalho\Faculdade\Projeto Poppins\frontend"
+cd frontend
 npm install
 npm run dev
 ```
@@ -77,14 +79,14 @@ Abra o endereço informado pelo Vite, normalmente `http://localhost:5173`. Por p
 Testes unitários do backend:
 
 ```powershell
-cd "C:\Users\nanha\OneDrive\Área de Trabalho\Faculdade\Projeto Poppins\backend"
+cd backend
 npm test
 ```
 
 Build de produção do frontend:
 
 ```powershell
-cd "C:\Users\nanha\OneDrive\Área de Trabalho\Faculdade\Projeto Poppins\frontend"
+cd frontend
 npm run build
 ```
 
